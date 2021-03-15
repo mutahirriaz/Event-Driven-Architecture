@@ -2,8 +2,13 @@ type Event {
     result: String
 }
 
+type EventList{
+    id : String
+    event : String
+}
+
 type Query {
-    getEvent: [Event]
+    getEvent: [EventList]
 }
 
 type Mutation {

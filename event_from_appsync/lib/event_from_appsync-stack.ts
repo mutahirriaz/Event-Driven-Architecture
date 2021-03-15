@@ -40,56 +40,56 @@ export class EventFromAppsyncStack extends cdk.Stack {
       });
     events.EventBus.grantAllPutEvents(httpDs);
 
-    const todosLambda = new lambda.Function(this , "todosLambda" , {
-      runtime : lambda.Runtime.NODEJS_10_X,
-      code : lambda.Code.fromAsset("lambda"),
-      handler : "main.handler"
+    const todosLambda = new lambda.Function(this, "todosLambda", {
+      runtime: lambda.Runtime.NODEJS_10_X,
+      code: lambda.Code.fromAsset("lambda"),
+      handler: "main.handler"
     });
 
-    const mutations = ["createEvent" , "deleteEvent", "updateEvent"];
+    const mutations = ["createEvent", "deleteEvent", "updateEvent"];
 
     mutations.forEach((mut) => {
 
-      if(mut === "createEvent"){
-        let details =  `\\\"event\\\": \\\"$ctx.arguments.event\\\"`
+      if (mut === "createEvent") {
+        let details = `\\\"event\\\": \\\"$ctx.arguments.event\\\"`
 
         const putEventResolver = httpDs.createResolver({
           typeName: "Mutation",
           fieldName: mut,
-          requestMappingTemplate: appsync.MappingTemplate.fromString(requestTemplate(details , mut)),
+          requestMappingTemplate: appsync.MappingTemplate.fromString(requestTemplate(details, mut)),
           responseMappingTemplate: appsync.MappingTemplate.fromString(responseTemplate()),
         });
-    
+
       }
-    
-      else if(mut === "deleteEvent"){
-        let details =  `\\\"id\\\": \\\"$ctx.arguments.id\\\"`
+
+      else if (mut === "deleteEvent") {
+        let details = `\\\"id\\\": \\\"$ctx.arguments.id\\\"`
 
         const deleteEventResolver = httpDs.createResolver({
-          typeName : "Mutation",
-          fieldName : mut,
-          requestMappingTemplate: appsync.MappingTemplate.fromString(requestTemplate(details , mut)),
+          typeName: "Mutation",
+          fieldName: mut,
+          requestMappingTemplate: appsync.MappingTemplate.fromString(requestTemplate(details, mut)),
           responseMappingTemplate: appsync.MappingTemplate.fromString(responseTemplate()),
         });
       }
 
-      else if (mut === "updateEvent"){
-        let details =  `\\\"id\\\": \\\"$ctx.arguments.id\\\",\\\"event\\\": \\\"$ctx.arguments.event\\\"`
+      else if (mut === "updateEvent") {
+        let details = `\\\"id\\\": \\\"$ctx.arguments.id\\\",\\\"event\\\": \\\"$ctx.arguments.event\\\"`
 
         const updateEventResolver = httpDs.createResolver({
-          typeName : "Mutation",
-          fieldName : mut,
-          requestMappingTemplate: appsync.MappingTemplate.fromString(requestTemplate(details , mut)),
+          typeName: "Mutation",
+          fieldName: mut,
+          requestMappingTemplate: appsync.MappingTemplate.fromString(requestTemplate(details, mut)),
           responseMappingTemplate: appsync.MappingTemplate.fromString(responseTemplate()),
         });
       }
-    
+
 
     });
 
     // Resolver
-    
-   
+
+
 
     const dynamodbTable = new dynamodb.Table(this, 'AddTodo_Event', {
       tableName: 'AddTodo_Event',
@@ -101,6 +101,15 @@ export class EventFromAppsyncStack extends cdk.Stack {
 
     dynamodbTable.grantFullAccess(todosLambda);
     todosLambda.addEnvironment('ADDTODO_EVENTS', dynamodbTable.tableName);
+
+    const datasource = api.addDynamoDbDataSource('appsyncDatasource', dynamodbTable)
+
+    datasource.createResolver({
+      typeName: 'Query',
+      fieldName: 'getEvent',
+      requestMappingTemplate: appsync.MappingTemplate.dynamoDbScanTable(),
+      responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultList(),
+    });
 
 
     // Testing Echo Lambda
@@ -116,8 +125,8 @@ export class EventFromAppsyncStack extends cdk.Stack {
     const rule = new events.Rule(this, "AppSyncEventBridgeRule", {
       eventPattern: {
         source: ["eru-appsync-events"],
-          // every event that has source = "eru-appsync-events" will be sent to our echo lambda
-        detailType : [...mutations]
+        // every event that has source = "eru-appsync-events" will be sent to our echo lambda
+        detailType: [...mutations]
       },
     });
     rule.addTarget(new targets.LambdaFunction(todosLambda));
