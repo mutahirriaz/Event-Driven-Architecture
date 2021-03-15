@@ -21,6 +21,32 @@ exports.handler = async (event: EventBridgeEvent<string , any> , context:Context
         };
          await dynamoClient.put(params).promise();
     }
+
+    else if (event["detail-type"] === "deleteEvent"){
+        const params = {
+            TableName : process.env.ADDTODO_EVENTS || "",
+            Key  : {
+                id : event.detail.id
+            }
+        };
+        await dynamoClient.delete(params).promise();
+    }
+
+    else if(event["detail-type"] === "updateEvent"){
+        const params = {
+            TableName : process.env.ADDTODO_EVENTS || "",
+            Key: {
+                id: event.detail.id
+            },
+            UpdateExpression: "set event = :event",
+            ExpressionAttributeValues: {
+                ":event" : event.detail.event
+            },
+            ReturnValues : "UPDATED_NEW",
+        };
+        await dynamoClient.update(params).promise()
+    }
+
    }
    catch(err){
     console.log("error" , err);

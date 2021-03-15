@@ -8,4 +8,6 @@ type Query {
 
 type Mutation {
     createEvent(event: String!): Event
+    deleteEvent(id:String!):Event
+    updateEvent(event: String!, id: String!): Event
 }

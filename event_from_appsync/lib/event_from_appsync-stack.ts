@@ -46,7 +46,7 @@ export class EventFromAppsyncStack extends cdk.Stack {
       handler : "main.handler"
     });
 
-    const mutations = ["createEvent"]
+    const mutations = ["createEvent" , "deleteEvent", "updateEvent"];
 
     mutations.forEach((mut) => {
 
@@ -62,7 +62,27 @@ export class EventFromAppsyncStack extends cdk.Stack {
     
       }
     
+      else if(mut === "deleteEvent"){
+        let details =  `\\\"id\\\": \\\"$ctx.arguments.id\\\"`
 
+        const deleteEventResolver = httpDs.createResolver({
+          typeName : "Mutation",
+          fieldName : mut,
+          requestMappingTemplate: appsync.MappingTemplate.fromString(requestTemplate(details , mut)),
+          responseMappingTemplate: appsync.MappingTemplate.fromString(responseTemplate()),
+        });
+      }
+
+      else if (mut === "updateEvent"){
+        let details =  `\\\"id\\\": \\\"$ctx.arguments.id\\\",\\\"event\\\": \\\"$ctx.arguments.event\\\"`
+
+        const updateEventResolver = httpDs.createResolver({
+          typeName : "Mutation",
+          fieldName : mut,
+          requestMappingTemplate: appsync.MappingTemplate.fromString(requestTemplate(details , mut)),
+          responseMappingTemplate: appsync.MappingTemplate.fromString(responseTemplate()),
+        });
+      }
     
 
     });
